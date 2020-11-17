@@ -57,11 +57,11 @@ public class BiometricActivity extends AppCompatActivity {
             justAuthenticate();
             return;
           case REGISTER_SECRET:
-          authenticateToEncrypt(mPromptInfo.getSecretKey(), mPromptInfo.invalidateOnEnrollment());
-          return;
+            authenticateToEncrypt(mPromptInfo.getSecretKey(), mPromptInfo.invalidateOnEnrollment());
+            return;
           case LOAD_SECRET:
-          authenticateToDecrypt(mPromptInfo.getSecretKey());
-          return;
+            authenticateToDecrypt(mPromptInfo.getSecretKey());
+            return;
         }
         throw new CryptoException(PluginError.BIOMETRIC_ARGS_PARSING_FAILED);
     }
