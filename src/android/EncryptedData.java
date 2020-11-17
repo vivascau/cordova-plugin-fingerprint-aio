@@ -18,17 +18,17 @@ class EncryptedData {
         this.initializationVector = initializationVector;
     }
 
-    static byte[] loadInitializationVector(Context context) throws CryptoException {
-        return load(IV_KEY_NAME, context);
+    static byte[] loadInitializationVector(String key, Context context) throws CryptoException {
+        return load(IV_KEY_NAME + key, context);
     }
 
-    static byte[] loadCiphertext(Context context) throws CryptoException {
-        return load(CIPHERTEXT_KEY_NAME, context);
+    static byte[] loadCiphertext(String key, Context context) throws CryptoException {
+        return load(CIPHERTEXT_KEY_NAME + key, context);
     }
 
-    void save(Context context) {
-        save(IV_KEY_NAME, initializationVector, context);
-        save(CIPHERTEXT_KEY_NAME, ciphertext, context);
+    void save(String key, Context context) {
+        save(IV_KEY_NAME + key, initializationVector, context);
+        save(CIPHERTEXT_KEY_NAME + key, ciphertext, context);
     }
 
     private void save(String key, byte[] value, Context context) {

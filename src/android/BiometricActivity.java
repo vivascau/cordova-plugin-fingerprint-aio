@@ -57,21 +57,21 @@ public class BiometricActivity extends AppCompatActivity {
             justAuthenticate();
             return;
           case REGISTER_SECRET:
-            authenticateToEncrypt(mPromptInfo.invalidateOnEnrollment());
+            authenticateToEncrypt(mPromptInfo.getSecretKey(), mPromptInfo.invalidateOnEnrollment());
             return;
           case LOAD_SECRET:
-            authenticateToDecrypt();
+            authenticateToDecrypt(mPromptInfo.getSecretKey());
             return;
         }
         throw new CryptoException(PluginError.BIOMETRIC_ARGS_PARSING_FAILED);
     }
 
-    private void authenticateToEncrypt(boolean invalidateOnEnrollment) throws CryptoException {
+    private void authenticateToEncrypt(String key, boolean invalidateOnEnrollment) throws CryptoException {
         if (mPromptInfo.getSecret() == null) {
             throw new CryptoException(PluginError.BIOMETRIC_ARGS_PARSING_FAILED);
         }
         Cipher cipher = mCryptographyManager
-                .getInitializedCipherForEncryption(SECRET_KEY, invalidateOnEnrollment, this);
+                .getInitializedCipherForEncryption(SECRET_KEY + key, invalidateOnEnrollment, this);
         mBiometricPrompt.authenticate(createPromptInfo(), new BiometricPrompt.CryptoObject(cipher));
     }
 
@@ -79,10 +79,10 @@ public class BiometricActivity extends AppCompatActivity {
         mBiometricPrompt.authenticate(createPromptInfo());
     }
 
-    private void authenticateToDecrypt() throws CryptoException {
-        byte[] initializationVector = EncryptedData.loadInitializationVector(this);
+    private void authenticateToDecrypt(String key) throws CryptoException {
+        byte[] initializationVector = EncryptedData.loadInitializationVector(key, this);
         Cipher cipher = mCryptographyManager
-                .getInitializedCipherForDecryption(SECRET_KEY, initializationVector, this);
+                .getInitializedCipherForDecryption(SECRET_KEY + key, initializationVector, this);
         mBiometricPrompt.authenticate(createPromptInfo(), new BiometricPrompt.CryptoObject(cipher));
     }
 
@@ -213,11 +213,11 @@ public class BiometricActivity extends AppCompatActivity {
     private void encrypt(BiometricPrompt.CryptoObject cryptoObject) throws CryptoException {
         String text = mPromptInfo.getSecret();
         EncryptedData encryptedData = mCryptographyManager.encryptData(text, cryptoObject.getCipher());
-        encryptedData.save(this);
+        encryptedData.save(mPromptInfo.getSecretKey(), this);
     }
 
     private Intent getDecryptedIntent(BiometricPrompt.CryptoObject cryptoObject) throws CryptoException {
-        byte[] ciphertext = EncryptedData.loadCiphertext(this);
+        byte[] ciphertext = EncryptedData.loadCiphertext(mPromptInfo.getSecretKey(), this);
         String secret = mCryptographyManager.decryptData(ciphertext, cryptoObject.getCipher());
         if (secret != null) {
             Intent intent = new Intent();

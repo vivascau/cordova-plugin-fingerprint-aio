@@ -132,6 +132,7 @@ Fingerprint.show({
 Fingerprint.registerBiometricSecret({
       description: "Some biometric description",
       secret: "my-super-secret",
+      secretKey: "current-secret-key",
       invalidateOnEnrollment: true,
       disableBackup: true, // always disabled on Android
     }, successCallback, errorCallback);
@@ -161,12 +162,14 @@ Fingerprint.registerBiometricSecret({
 * __cancelButtonTitle__: For cancel button on Android
 * __confirmationRequired__ (**Android**): If `false` user confirmation is NOT required after a biometric has been authenticated . Default: `true`. See [docs](https://developer.android.com/training/sign-in/biometric-auth#no-explicit-user-action).
 * __secret__: String secret to encrypt and save, use simple strings matching the regex [a-zA-Z0-9\-]+
+* __secretKey__: String representing a key to allow storing multiple secrets. Default: `""` (empty string so that secret is saved with default key).
 * __invalidateOnEnrollment__: If `true` secret will be deleted when biometry items are deleted or enrolled 
 
 ### Show authentication dialogue and load secret
 ```javascript
 Fingerprint.loadBiometricSecret({
       description: "Some biometric description",
+      secretKey: "my-secret-key",
       disableBackup: true, // always disabled on Android
     }, successCallback, errorCallback);
 
@@ -185,6 +188,7 @@ Fingerprint.loadBiometricSecret({
 * __description__: Description in authentication dialogue. Defaults:
   * iOS: `"Authenticate"` (iOS' [evaluatePolicy()](https://developer.apple.com/documentation/localauthentication/lacontext/1514176-evaluatepolicy?language=objc) requires this field)
   * Android: `null`
+* __secretkey__: Secret to be fetched for specific key. Default: `""` empty string if default key is used for saving all secrets.
 * __fallbackButtonTitle__: Title of fallback button. Defaults:
   * When **disableBackup** is true
      *  `"Cancel"`

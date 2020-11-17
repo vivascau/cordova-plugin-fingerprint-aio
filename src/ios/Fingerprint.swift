@@ -139,12 +139,13 @@ enum PluginError:Int {
 
     func saveSecret(_ secretStr: String, command: CDVInvokedUrlCommand) {
         let data  = command.arguments[0] as AnyObject?;
+        let secretKey = (data?["secretKey"] as? String) ?? ""
         var pluginResult: CDVPluginResult
         do {
             let secret = Secret()
-            try? secret.delete()
+            try? secret.delete(secretKey: secretKey);
             let invalidateOnEnrollment = (data?["invalidateOnEnrollment"] as? Bool) ?? false
-            try secret.save(secretStr, invalidateOnEnrollment: invalidateOnEnrollment)
+            try secret.save(secretStr, invalidateOnEnrollment: invalidateOnEnrollment, secretKey: secretKey)
             pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Success");
         } catch {
             let errorResult = ["code": PluginError.BIOMETRIC_UNKNOWN_ERROR.rawValue, "message": error.localizedDescription] as [String : Any];
@@ -154,16 +155,16 @@ enum PluginError:Int {
         return
     }
 
-
     func loadSecret(_ command: CDVInvokedUrlCommand) {
         let data  = command.arguments[0] as AnyObject?;
+        let secretKey = (data?["secretKey"] as? String) ?? ""
         var prompt = "Authentication"
         if let description = data?["description"] as! String? {
             prompt = description;
         }
         var pluginResult: CDVPluginResult
         do {
-            let result = try Secret().load(prompt)
+            let result = try Secret().load(prompt, secretKey: secretKey)
             pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: result);
         } catch {
             var code = PluginError.BIOMETRIC_UNKNOWN_ERROR.rawValue
@@ -262,7 +263,7 @@ class Secret {
         return access!
     }
 
-    func save(_ secret: String, invalidateOnEnrollment: Bool) throws {
+    func save(_ secret: String, invalidateOnEnrollment: Bool, secretKey: String) throws {
         let password = secret.data(using: String.Encoding.utf8)!
 
         // Allow a device unlock in the last 10 seconds to be used to get at keychain items.
@@ -271,7 +272,7 @@ class Secret {
 
         // Build the query for use in the add operation.
         let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
-                                    kSecAttrAccount as String: Secret.keyName,
+                                    kSecAttrAccount as String: Secret.keyName + secretKey,
                                     kSecAttrAccessControl as String: getBioSecAccessControl(invalidateOnEnrollment: invalidateOnEnrollment),
                                     kSecValueData as String: password]
 
@@ -279,9 +280,9 @@ class Secret {
         guard status == errSecSuccess else { throw KeychainError(status: status) }
     }
 
-    func load(_ prompt: String) throws -> String {
+    func load(_ prompt: String, secretKey: String) throws -> String {
         let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
-                                    kSecAttrAccount as String: Secret.keyName,
+                                    kSecAttrAccount as String: Secret.keyName + secretKey,
                                     kSecMatchLimit as String: kSecMatchLimitOne,
                                     kSecReturnData as String : kCFBooleanTrue,
                                     kSecAttrAccessControl as String: getBioSecAccessControl(invalidateOnEnrollment: true),
@@ -301,9 +302,9 @@ class Secret {
         return password
     }
 
-    func delete() throws {
+    func delete(secretKey: String) throws {
         let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
-                                    kSecAttrAccount as String: Secret.keyName]
+                                    kSecAttrAccount as String: Secret.keyName + secretKey]
 
         let status = SecItemDelete(query as CFDictionary)
         guard status == errSecSuccess else { throw KeychainError(status: status) }
